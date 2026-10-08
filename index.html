@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root {
+  color-scheme: dark;
   --bg: #0E0B16;
   --card: #181425;
   --card2: #211B33;
@@ -210,6 +211,9 @@ nav.tabs button.on b { filter: none; }
 .opts button.on { border-color: var(--sc, var(--xp)); color: var(--txt); background: var(--card2); box-shadow: inset 0 0 0 1px var(--sc, var(--xp)); }
 .inline { display: flex; gap: 8px; }
 .inline input { flex: 1; }
+.field textarea { width: 100%; min-height: 140px; resize: vertical; background: var(--bg); color: var(--txt); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; outline: none; }
+.field textarea:focus { border-color: var(--xp); }
+.sheet p.note { color: var(--mut); font-size: 14px; margin: 0 0 16px; }
 
 /* ---------- Toasts / overlays ---------- */
 #toasts { position: fixed; top: 12px; left: 0; right: 0; z-index: 60; display: grid; justify-items: center; gap: 6px; pointer-events: none; padding: 0 16px; }
@@ -379,7 +383,32 @@ function stat(id) { return STATS.filter(function (s) { return s.id === id; })[0]
 function fmtDate(iso) { var p = iso.split("-"); return p[2] + "/" + p[1]; }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
-function avatarURL(style, seed) { return "https://api.dicebear.com/9.x/" + style + "/svg?seed=" + encodeURIComponent(seed || "héros"); }
+// Avatars : générés dans le navigateur avec la bibliothèque DiceBear dès qu'elle est chargée,
+// sinon via l'API DiceBear, sinon une initiale (voir fallbackAvatar).
+var DB = null, avatarCache = {};
+function avatarURL(style, seed) {
+  seed = seed || "héros";
+  if (DB && DB.styles[style]) {
+    var k = style + "|" + seed;
+    if (!avatarCache[k]) { try { avatarCache[k] = DB.core.createAvatar(DB.styles[style], { seed: seed }).toDataUri(); } catch (e) { return ""; } }
+    return avatarCache[k];
+  }
+  return "https://api.dicebear.com/9.x/" + style + "/svg?seed=" + encodeURIComponent(seed);
+}
+function loadAvatarLib() {
+  var base = "https://cdn.jsdelivr.net/npm/@dicebear/", v = "@9.2.2/+esm";
+  var names = HERO_STYLES.concat(["bottts"]);
+  try {
+    Promise.all([import(base + "core" + v)].concat(names.map(function (n) { return import(base + n + v); })))
+      .then(function (mods) {
+        var styles = {};
+        names.forEach(function (n, i) { styles[n] = mods[i + 1]; });
+        DB = { core: mods[0], styles: styles };
+        if (!(S === null && document.activeElement && document.activeElement.id === "onbName")) render();
+      })
+      .catch(function () {});
+  } catch (e) {}
+}
 function fallbackAvatar(letter, color) {
   var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='#211B33'/><text x='32' y='42' font-family='system-ui,sans-serif' font-size='30' font-weight='800' text-anchor='middle' fill='" + (color || "#A78BFA") + "'>" + esc((letter || "?").charAt(0).toUpperCase()) + "</text></svg>";
   return "data:image/svg+xml," + encodeURIComponent(svg);
@@ -774,7 +803,6 @@ function viewProfile() {
     '<label class="toggle"><span>🏖️ Mode pause<small>Vacances ou maladie : pas de dégâts, les séries sont gelées.</small></span><input type="checkbox" data-act="pause"' + (S.pause ? " checked" : "") + "></label>" +
     '<div class="row"><button class="btn" data-act="export">⬇️ Exporter</button><button class="btn" data-act="import">⬆️ Importer</button></div>' +
     '<button class="btn danger block" data-act="reset">🗑️ Recommencer à zéro</button>' +
-    '<input type="file" id="importFile" accept="application/json,.json" class="hidden">' +
     "</div>";
 
   h += '<h2>📖 Journal</h2><div class="log">' + (S.log.length ? S.log.slice(0, 40).map(function (l) {
@@ -890,10 +918,11 @@ function questSheet(kind, item) {
     });
     $("#qTitle", root).addEventListener("keydown", function (e) { if (e.key === "Enter") $("#qSave", root).click(); });
     if (item) $("#qDel", root).addEventListener("click", function () {
-      if (!confirm("Supprimer « " + item.title + " » ?")) return;
-      S.dailies = S.dailies.filter(function (x) { return x !== item; });
-      S.quests = S.quests.filter(function (x) { return x !== item; });
-      closeSheet(); commit();
+      askConfirm("Supprimer cette quête ?", "« " + esc(item.title) + " » sera retirée de ta liste.", "Supprimer", function () {
+        S.dailies = S.dailies.filter(function (x) { return x !== item; });
+        S.quests = S.quests.filter(function (x) { return x !== item; });
+        commit();
+      });
     });
   });
 }
@@ -925,9 +954,10 @@ function bossSheet(item) {
       closeSheet(); commit();
     });
     if (item) $("#bDel", root).addEventListener("click", function () {
-      if (!confirm("Supprimer le boss « " + item.name + " » ?")) return;
-      S.bosses = S.bosses.filter(function (x) { return x !== item; });
-      closeSheet(); commit();
+      askConfirm("Supprimer ce boss ?", "« " + esc(item.name) + " » disparaîtra, sans récompense.", "Supprimer", function () {
+        S.bosses = S.bosses.filter(function (x) { return x !== item; });
+        commit();
+      });
     });
   });
 }
@@ -1045,26 +1075,55 @@ function buzz() { try { if (navigator.vibrate) navigator.vibrate(25); } catch (e
 /* =========================================================
    Sauvegarde : export / import
    ========================================================= */
+// Dans une page intégrée (iframe), les téléchargements sont souvent bloqués : on ne propose alors que la copie.
+var canDownload = (function () { try { return window.self === window.top; } catch (e) { return false; } })();
 function exportSave() {
-  var blob = new Blob([JSON.stringify(S, null, 2)], { type: "application/json" });
-  var a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "lifequest-sauvegarde-" + today() + ".json";
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-  toast("⬇️ Sauvegarde exportée");
+  var json = JSON.stringify(S);
+  sheet("<h3>Exporter ma partie</h3><p class=\"note\">Copie ce texte et garde-le (notes, mail à toi-même…). Pour restaurer ta partie, colle-le dans Profil → Importer.</p>" +
+    '<label class="field"><span>Ta sauvegarde</span><textarea id="exText" readonly>' + esc(json) + "</textarea></label>" +
+    '<div class="row"><button class="btn primary" id="exCopy">Copier</button>' + (canDownload ? '<button class="btn" id="exFile">Télécharger le fichier</button>' : "") + "</div>", function (root) {
+    var ta = $("#exText", root);
+    $("#exCopy", root).addEventListener("click", function () {
+      var ok = function () { toast("📋 Sauvegarde copiée"); };
+      var fallback = function () { ta.focus(); ta.select(); toast("Texte sélectionné : copie-le avec Ctrl+C ou un appui long"); };
+      try { navigator.clipboard.writeText(json).then(ok, fallback); } catch (e) { fallback(); }
+    });
+    if (canDownload) $("#exFile", root).addEventListener("click", function () {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type: "application/json" }));
+      a.download = "lifequest-sauvegarde-" + today() + ".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    });
+  });
 }
-function importSave(file) {
-  var r = new FileReader();
-  r.onload = function () {
-    try {
-      var s = JSON.parse(r.result);
-      if (!s || !s.hero) throw 0;
-      if (!confirm("Remplacer ta partie actuelle par cette sauvegarde ?")) return;
-      S = normalize(s); rollover(); save(); render(); toast("⬆️ Sauvegarde importée");
-    } catch (e) { toast("❌ Fichier de sauvegarde invalide"); }
-  };
-  r.readAsText(file);
+function importSheet() {
+  sheet("<h3>Importer une partie</h3><p class=\"note\">Colle le texte d'une sauvegarde, ou choisis un fichier .json. Ta partie actuelle sera remplacée.</p>" +
+    '<label class="field"><span>Texte de la sauvegarde</span><textarea id="imText" placeholder="{&quot;v&quot;:1,…}"></textarea></label>' +
+    '<div class="row"><button class="btn" id="imFile">Choisir un fichier</button><button class="btn primary" id="imGo">Importer</button></div>' +
+    '<input type="file" id="importFile" accept="application/json,.json" class="hidden">', function (root) {
+    $("#imFile", root).addEventListener("click", function () { $("#importFile", root).click(); });
+    $("#importFile", root).addEventListener("change", function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      var r = new FileReader();
+      r.onload = function () { applyImport(r.result); };
+      r.readAsText(f);
+    });
+    $("#imGo", root).addEventListener("click", function () { applyImport($("#imText", root).value); });
+  });
+}
+function applyImport(text) {
+  var s;
+  try { s = JSON.parse(text); if (!s || !s.hero) throw 0; }
+  catch (e) { toast("❌ Ce texte n'est pas une sauvegarde LifeQuest"); return; }
+  S = normalize(s); rollover(); save(); closeSheet(); render(); toast("⬆️ Partie importée : bon retour, " + S.hero.name + " !");
+}
+function askConfirm(title, html, okLabel, fn) {
+  sheet("<h3>" + esc(title) + '</h3><p class="note">' + html + "</p>" +
+    '<div class="row"><button class="btn" id="cfNo">Annuler</button><button class="btn danger" id="cfYes">' + esc(okLabel) + "</button></div>", function (root) {
+    $("#cfNo", root).addEventListener("click", closeSheet);
+    $("#cfYes", root).addEventListener("click", function () { closeSheet(); fn(); });
+  });
 }
 
 /* =========================================================
@@ -1093,12 +1152,12 @@ document.addEventListener("click", function (e) {
     case "edit-reward": rewardSheet(find(S.rewards, id)); break;
     case "edit-hero": heroSheet(); break;
     case "export": exportSave(); break;
-    case "import": $("#importFile").click(); break;
+    case "import": importSheet(); break;
     case "reset":
-      if (confirm("Effacer toute ta progression ? (Pense à exporter avant.)") && confirm("Vraiment tout effacer ?")) {
+      askConfirm("Recommencer à zéro ?", "Ton héros, tes niveaux, ton or et tes quêtes seront effacés. Exporte ta partie avant si tu veux la garder.", "Tout effacer", function () {
         try { localStorage.removeItem(KEY); } catch (err) {}
         S = null; onb = { name: "", style: "pixel-art" }; tab = "quetes"; render();
-      }
+      });
       break;
     case "add":
       if (tab === "boss") bossSheet();
@@ -1114,7 +1173,6 @@ document.addEventListener("change", function (e) {
     log(S.pause ? "🏖️ Mode pause activé" : "⚔️ Retour à l'aventure");
     commit();
   }
-  if (e.target.id === "importFile" && e.target.files[0]) importSave(e.target.files[0]);
 });
 document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
 // Si l'app reste ouverte après minuit, on passe au jour suivant au retour.
@@ -1128,6 +1186,7 @@ document.addEventListener("visibilitychange", function () {
 S = load();
 if (S) rollover();
 render();
+loadAvatarLib();
 
 if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
   window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
