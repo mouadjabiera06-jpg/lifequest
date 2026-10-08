@@ -1,33 +1,68 @@
 # ⚔️ LifeQuest
 
-Ta vie comme un jeu vidéo : termine tes quêtes, gagne de l'XP, monte de niveau, bats tes boss.
+Ta vie comme un jeu vidéo : tes habitudes deviennent des quêtes, tes gros objectifs des boss, et chaque effort te rapporte de l'XP et de l'or.
+Application web installable (PWA), utilisable hors ligne, avec synchronisation facultative entre appareils.
 
-Une app web en **un seul fichier HTML**. Pas de compte, pas de serveur : tes données restent sur ton appareil (localStorage). Elle fonctionne hors ligne et s'installe sur le téléphone comme une vraie app.
+## Fonctionnalités
 
-## Comment ça marche
+- **Quêtes quotidiennes** avec séries 🔥 et bonus d'XP (jusqu'à +50 %), **missions** ponctuelles et **quêtes bonus** tirées au hasard.
+- **PV et K.O.** : une quotidienne ratée coûte des PV le lendemain ; à 0 PV, tu perds la moitié de ton or.
+- **Boss** : un gros objectif découpé en étapes, avec date limite et butin à la victoire.
+- **5 statistiques** (💪 Force, 🧠 Intelligence, 🗣️ Charisme, 🎯 Discipline, 💰 Richesse), **rangs**, **succès**, **boutique** de vraies récompenses.
+- **Compte facultatif** (code par e-mail, sans mot de passe) pour retrouver ta partie sur téléphone et ordinateur.
 
-| Élément | Règle |
+## Stack
+
+| Rôle | Outil |
 |---|---|
-| **Quêtes quotidiennes** | Tes habitudes. Facile 10 XP · Moyen 25 XP · Difficile 50 XP. Chaque jour d'affilée augmente ta série 🔥 et ton bonus d'XP (jusqu'à +50 %). |
-| **PV** | Une quotidienne ratée te coûte 3, 5 ou 8 PV le lendemain. À 0 PV, c'est le K.O. : tu perds la moitié de ton or. Chaque quête terminée rend 1 PV, un niveau gagné les rend tous. |
-| **Missions** | Objectifs ponctuels. Le bouton 🎲 tire une quête bonus au hasard. |
-| **Boss** | Un gros objectif découpé en étapes (un partiel, un projet…). Chaque étape lui retire 1 PV. Victoire : +20 XP et +10 🪙 par PV. Après la date limite, il t'attaque chaque jour. |
-| **Stats** | 💪 Force · 🧠 Intelligence · 🗣️ Charisme · 🎯 Discipline · 💰 Richesse, chacune avec son niveau. |
-| **Boutique** | Dépense ton or en vraies récompenses que tu choisis toi-même, ou en potion de soin. |
-| **Rangs** | Novice → Apprenti (5) → Aventurier (10) → Héros (20) → Champion (35) → Légende (50). |
+| Interface | React 19 + TypeScript strict, Vite 6 |
+| État | Zustand (le jeu est calculé par un domaine en fonctions pures) |
+| Validation | Zod (toute sauvegarde venue de l'extérieur) |
+| Hors ligne / installation | vite-plugin-pwa (Workbox) |
+| Compte et synchronisation | Supabase (Auth + Postgres avec RLS), chargé seulement si configuré |
+| Tests | Vitest (domaine), Playwright (parcours complets) |
+| Hébergement | GitHub Pages, déployé par GitHub Actions |
 
-Le **mode pause** (Profil) gèle les dégâts et les séries pendant les vacances ou une maladie.
+## Démarrage rapide
 
-## Utiliser l'app
+Prérequis : **Node.js 20+** et npm.
 
-- **Sur ordinateur** : télécharge le dépôt (Code → Download ZIP) et ouvre `index.html` dans ton navigateur.
-- **Sur téléphone** : publie le dépôt avec GitHub Pages, ouvre le lien, puis « Ajouter à l'écran d'accueil ».
+```bash
+git clone https://github.com/mouadjabiera06-jpg/lifequest.git
+cd lifequest
+npm install
+npm run dev            # http://localhost:5173
+```
 
-Pense à **exporter ta sauvegarde** de temps en temps (Profil → Exporter) : vider les données du navigateur efface la partie.
+Sans configuration, l'app fonctionne entièrement en local (sans compte). Pour activer la synchronisation, copie `.env.example` en `.env` et renseigne les deux variables Supabase : voir [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#2-activer-la-synchronisation-supabase).
 
-## API utilisées (gratuites, sans clé)
+| Commande | Rôle |
+|---|---|
+| `npm run dev` | Serveur de développement |
+| `npm run check` | Lint + types + tests unitaires (à lancer avant chaque commit) |
+| `npm run build` | Build de production dans `dist/` |
+| `npm run test:e2e` | Tests Playwright sur le build (`npm run build` d'abord) |
 
-- [DiceBear](https://www.dicebear.com) : avatars du héros et des boss. Hors ligne, une initiale les remplace.
-- [Open5e](https://open5e.com) : noms de monstres aléatoires pour les boss. Hors ligne, une liste intégrée prend le relais.
+## Structure
 
-Les citations du jour et les quêtes bonus sont intégrées à l'app, en français.
+```
+src/
+  domain/     Règles du jeu en TypeScript pur (aucun React, aucun navigateur) + tests
+  data/       Stockage local, accès Supabase, règles de synchronisation
+  state/      Store Zustand, orchestration de la synchro, messages au joueur
+  ui/         Composants, écrans, formulaires, styles
+supabase/     Migration SQL (table + règles d'accès RLS)
+tests/e2e/    Parcours Playwright
+docs/         Architecture, sécurité, déploiement
+```
+
+## Documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) : conception, modèle de données, décisions techniques.
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) : mise en ligne, Supabase, CI/CD.
+- [docs/SECURITY.md](docs/SECURITY.md) : mesures de sécurité et limites connues.
+- [CHANGELOG.md](CHANGELOG.md)
+
+## Vie privée
+
+Sans compte, tes données ne quittent jamais ton appareil. Avec un compte, ta partie est stockée dans ta propre ligne de base de données, que toi seul peux lire. Les avatars sont générés dans le navigateur : aucun service tiers ne reçoit ton pseudo.
