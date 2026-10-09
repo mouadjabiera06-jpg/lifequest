@@ -26,6 +26,15 @@ function Heatmap({ game }: { game: GameState }) {
   );
 }
 
+// Intégrée dans une autre page (iframe), l'app ne peut souvent pas déclencher de téléchargement.
+const canDownload = (() => {
+  try {
+    return window.self === window.top;
+  } catch {
+    return false;
+  }
+})();
+
 function ExportSheet({ game }: { game: GameState }) {
   const json = JSON.stringify(game);
   const copy = async () => {
@@ -56,7 +65,7 @@ function ExportSheet({ game }: { game: GameState }) {
       </label>
       <div className="row">
         <button className="btn primary" type="button" onClick={() => void copy()}>Copier</button>
-        <button className="btn" type="button" onClick={download}>Télécharger le fichier</button>
+        {canDownload && <button className="btn" type="button" onClick={download}>Télécharger le fichier</button>}
       </div>
     </>
   );
