@@ -8,6 +8,7 @@ import { parseSaveText } from "../../domain/schema";
 import type { GameState } from "../../domain/types";
 import { play, replaceGame, systemClock, toast } from "../../state/store";
 import { ProgressBar, SectionTitle } from "../components/basics";
+import { Icon } from "../components/Icon";
 import { openHeroForm } from "../forms/forms";
 import { askConfirm, closeSheet, openSheet } from "../sheet";
 import { AccountPanel } from "./Account";
@@ -127,13 +128,13 @@ export function ProfileScreen({ game }: { game: GameState }) {
   const unlocked = ACHIEVEMENTS.filter((a) => game.achievements[a.id]).length;
   return (
     <>
-      <SectionTitle>📊 Statistiques</SectionTitle>
-      <div className="list">
+      <SectionTitle>Statistiques</SectionTitle>
+      <div className="list stat-grid">
         {STATS.map((s) => {
           const lvl = statLevel(game.statXp[s.id]);
           return (
             <div key={s.id} className="stat-card" style={{ "--sc": `var(--${s.id})` } as CSSProperties}>
-              <div className="hd">{s.icon} {s.name}<span className="lv">Niv. {lvl.level}</span></div>
+              <div className="hd"><span className="sic"><Icon name={s.id} size={16} /></span>{s.name}<span className="lv">Niv. {lvl.level}</span></div>
               <div className="sub">{s.hint} · {game.statXp[s.id]} XP au total</div>
               <ProgressBar value={lvl.current} max={lvl.needed} label={`${s.name} vers le niveau suivant`} />
             </div>
@@ -141,10 +142,10 @@ export function ProfileScreen({ game }: { game: GameState }) {
         })}
       </div>
 
-      <SectionTitle>🗓️ 4 dernières semaines</SectionTitle>
+      <SectionTitle>4 dernières semaines</SectionTitle>
       <Heatmap game={game} />
 
-      <SectionTitle count={`${unlocked}/${ACHIEVEMENTS.length}`}>🏆 Succès</SectionTitle>
+      <SectionTitle count={`${unlocked}/${ACHIEVEMENTS.length}`}>Succès</SectionTitle>
       <div className="ach">
         {ACHIEVEMENTS.map((a) => (
           <div key={a.id} className={game.achievements[a.id] ? "on" : ""}>
@@ -157,19 +158,19 @@ export function ProfileScreen({ game }: { game: GameState }) {
         ))}
       </div>
 
-      <SectionTitle>☁️ Compte et synchronisation</SectionTitle>
+      <SectionTitle>Compte et synchronisation</SectionTitle>
       <AccountPanel />
 
-      <SectionTitle>⚙️ Réglages</SectionTitle>
+      <SectionTitle>Réglages</SectionTitle>
       <div className="settings">
-        <button className="btn block" type="button" onClick={openHeroForm}>✏️ Modifier mon héros</button>
+        <button className="btn block" type="button" onClick={openHeroForm}><Icon name="edit" size={16} /> Modifier mon héros</button>
         <label className="toggle">
-          <span>🏖️ Mode pause<small>Vacances ou maladie : pas de dégâts, les séries sont gelées.</small></span>
+          <span>Mode pause<small>Vacances ou maladie : pas de dégâts, les séries sont gelées.</small></span>
           <input id="pause-toggle" type="checkbox" checked={game.paused} onChange={(e) => play((s, c) => setPaused(s, e.target.checked, c))} />
         </label>
         <div className="row">
-          <button className="btn" type="button" onClick={() => openSheet(<ExportSheet game={game} />)}>⬇️ Exporter</button>
-          <button className="btn" type="button" onClick={() => openSheet(<ImportSheet />)}>⬆️ Importer</button>
+          <button className="btn" type="button" onClick={() => openSheet(<ExportSheet game={game} />)}><Icon name="download" size={16} /> Exporter ma partie</button>
+          <button className="btn" type="button" onClick={() => openSheet(<ImportSheet />)}><Icon name="upload" size={16} /> Importer une partie</button>
         </div>
         <button
           className="btn danger block"
@@ -183,11 +184,11 @@ export function ProfileScreen({ game }: { game: GameState }) {
             })
           }
         >
-          🗑️ Recommencer à zéro
+          <Icon name="trash" size={16} /> Recommencer à zéro
         </button>
       </div>
 
-      <SectionTitle>📖 Journal</SectionTitle>
+      <SectionTitle>Journal</SectionTitle>
       <div className="log">
         {game.journal.slice(0, 40).map((entry, i) => {
           const d = new Date(entry.at);

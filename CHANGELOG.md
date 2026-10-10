@@ -2,6 +2,16 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [2.1.0] - 2026-10-10
+
+Refonte visuelle, pensée aussi pour l'ordinateur.
+
+### Changed
+- Sur ordinateur : barre latérale de navigation (raccourcis 1 à 4, N pour ajouter), en-tête de page avec la date, héros en colonne à droite à partir de 1200 px.
+- Icônes dessinées (un seul trait) à la place des emojis dans la navigation, les statistiques, les quêtes, les boss et la boutique.
+- Titres en serif et chapitres en petites capitales, dans la grammaire visuelle d'Arpagon ; dégradés et halos lumineux retirés.
+- Les fenêtres s'ouvrent centrées sur grand écran au lieu de monter du bas.
+
 ## [2.0.0] - 2026-10-08
 
 Refonte complète en application structurée.

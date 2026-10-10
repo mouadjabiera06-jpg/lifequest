@@ -12,9 +12,10 @@ import type { AvatarStyle, Boss, Daily, Difficulty, Mission, ShopItem, StatId } 
 import { edit, play, useApp } from "../../state/store";
 import { Avatar } from "../components/Avatar";
 import { OptionGroup, type Option } from "../components/basics";
+import { Icon } from "../components/Icon";
 import { askConfirm, closeSheet, openSheet } from "../sheet";
 
-export const statOptions: Option<StatId>[] = STATS.map((s) => ({ value: s.id, label: `${s.icon} ${s.name}`, color: `var(--${s.id})` }));
+export const statOptions: Option<StatId>[] = STATS.map((s) => ({ value: s.id, label: s.name, color: `var(--${s.id})` }));
 const difficultyOptions: Option<Difficulty>[] = DIFFICULTY_IDS.map((d) => ({ value: d, label: `${DIFFICULTIES[d].name} · ${DIFFICULTIES[d].xp} XP` }));
 
 function FormError({ message }: { message: string | null }) {
@@ -55,7 +56,7 @@ function QuestForm({ kind: initialKind, quest }: { kind: QuestKind; quest?: Dail
           label="Type"
           value={kind}
           onChange={setKind}
-          options={[{ value: "daily", label: "🔁 Quotidienne" }, { value: "mission", label: "📜 Mission unique" }]}
+          options={[{ value: "daily", label: "Quotidienne" }, { value: "mission", label: "Mission unique" }]}
         />
       )}
       <OptionGroup label="Statistique" options={statOptions} value={stat} onChange={setStat} />
@@ -84,18 +85,18 @@ function BonusQuestSheet() {
   const s = statInfo(quest.stat);
   return (
     <>
-      <h3>🎲 Quête bonus</h3>
+      <h3>Quête bonus</h3>
       <div className="item" style={{ "--sc": `var(--${quest.stat})`, marginBottom: 14 } as CSSProperties}>
         <div className="it-body">
           <div className="it-title">{quest.title}</div>
           <div className="it-meta">
-            <span className="st">{s.icon} {s.name}</span>
+            <span className="st"><Icon name={s.id} size={13} /> {s.name}</span>
             <span>Moyen · {DIFFICULTIES.moyen.xp} XP</span>
           </div>
         </div>
       </div>
       <div className="row">
-        <button className="btn" type="button" onClick={() => setQuest(drawBonusQuest(Math.random()))}>🔄 Une autre</button>
+        <button className="btn" type="button" onClick={() => setQuest(drawBonusQuest(Math.random()))}>Tirer une autre</button>
         <button className="btn primary" type="button" onClick={() => { play((g, c) => acceptBonusQuest(g, quest, c)); closeSheet(); }}>Accepter</button>
       </div>
     </>
@@ -133,7 +134,7 @@ function BossForm({ boss }: { boss?: Boss }) {
         <label htmlFor="boss-alias"><span>Nom de monstre (pour le style)</span></label>
         <div className="inline">
           <input id="boss-alias" type="text" maxLength={60} placeholder="Ex. Hydre de la Procrastination" value={alias} onChange={(e) => setAlias(e.target.value)} autoComplete="off" />
-          <button className="btn" type="button" aria-label="Nom de monstre au hasard" onClick={() => setAlias(MONSTER_NAMES[Math.floor(Math.random() * MONSTER_NAMES.length)] ?? "")}>🎲</button>
+          <button className="btn" type="button" aria-label="Nom de monstre au hasard" onClick={() => setAlias(MONSTER_NAMES[Math.floor(Math.random() * MONSTER_NAMES.length)] ?? "")}><Icon name="dice" size={18} /></button>
         </div>
       </div>
       {!boss && (
@@ -149,7 +150,7 @@ function BossForm({ boss }: { boss?: Boss }) {
       <OptionGroup label="Statistique" options={statOptions} value={stat} onChange={setStat} />
       <FormError message={error} />
       <p className="note">
-        Chaque étape : +{BOSS.hit.xp} XP. Victoire : +{BOSS.lootPerHp.xp} XP et +{BOSS.lootPerHp.gold} 🪙 par PV du boss. Après la date limite, il t'attaque chaque jour.
+        Chaque étape : +{BOSS.hit.xp} XP. Victoire : +{BOSS.lootPerHp.xp} XP et +{BOSS.lootPerHp.gold} or par PV du boss. Après la date limite, il t'attaque chaque jour.
       </p>
       <button className="btn primary block" type="submit">{boss ? "Enregistrer" : "Invoquer le boss"}</button>
       {boss && (

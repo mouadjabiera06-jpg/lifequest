@@ -51,14 +51,10 @@ export function Empty({ children }: { children: ReactNode }) {
 export function SectionTitle({ children, count, action }: { children: ReactNode; count?: string | number; action?: ReactNode }) {
   return (
     <h2>
-      {children}
+      <span className="tt">{children}</span>
       {count !== undefined && <span className="count">{count}</span>}
-      {action && (
-        <>
-          <span className="sp" />
-          {action}
-        </>
-      )}
+      <span className="rule" aria-hidden="true" />
+      {action}
     </h2>
   );
 }

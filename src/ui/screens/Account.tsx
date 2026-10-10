@@ -50,7 +50,7 @@ export function AccountSheet() {
   if (step === "email") {
     return (
       <form onSubmit={sendEmail} noValidate>
-        <h3>☁️ Se connecter</h3>
+        <h3>Se connecter</h3>
         <p className="note">Ta partie sera sauvegardée en ligne et te suivra sur tous tes appareils. Pas de mot de passe : on t'envoie un code par e-mail.</p>
         <label className="field">
           <span>Adresse e-mail</span>
@@ -64,7 +64,7 @@ export function AccountSheet() {
 
   return (
     <form onSubmit={sendCode} noValidate>
-      <h3>📬 Vérifie tes e-mails</h3>
+      <h3>Vérifie tes e-mails</h3>
       <p className="note">Code envoyé à <b>{email}</b>. Saisis-le ici. Tu peux aussi cliquer sur le lien de l'e-mail depuis cet appareil.</p>
       <label className="field">
         <span>Code reçu</span>
@@ -81,7 +81,7 @@ export function AccountSheet() {
 
 function summary(game: GameState | null): string {
   if (!game) return "Aucune partie";
-  return `Niv. ${heroLevel(game.xp).level} · ${game.xp} XP · ${game.gold} 🪙 · ${game.counters.questsDone} quêtes`;
+  return `Niv. ${heroLevel(game.xp).level} · ${game.xp} XP · ${game.gold} or · ${game.counters.questsDone} quêtes`;
 }
 
 /** Deux appareils ont avancé chacun de leur côté : le joueur choisit. */
@@ -95,8 +95,8 @@ export function ConflictSheet() {
       <h3>Deux parties différentes</h3>
       <p className="note">Ta partie en ligne et celle de cet appareil ont avancé séparément. Choisis celle à garder ; l'autre sera remplacée.</p>
       <div className="compare">
-        <div><b>📱 Cet appareil</b>{game?.hero.name}<br />{summary(game)}</div>
-        <div><b>☁️ En ligne</b>{remote.state.hero.name}<br />{summary(remote.state)}</div>
+        <div><b>Cet appareil</b>{game?.hero.name}<br />{summary(game)}</div>
+        <div><b>En ligne</b>{remote.state.hero.name}<br />{summary(remote.state)}</div>
       </div>
       {message && <p className="error" role="alert">{message}</p>}
       <div className="row">
@@ -161,7 +161,7 @@ export function AccountPanel() {
           </div>
         </>
       ) : (
-        <button className="btn primary block" type="button" onClick={() => openSheet(<AccountSheet />)}>☁️ Se connecter pour synchroniser</button>
+        <button className="btn primary block" type="button" onClick={() => openSheet(<AccountSheet />)}>Se connecter pour synchroniser</button>
       )}
     </div>
   );

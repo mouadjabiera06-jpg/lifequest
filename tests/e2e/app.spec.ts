@@ -20,7 +20,7 @@ test.afterEach(async ({ page }) => {
 
 test("créer un héros, valider une quête, et la retrouver après rechargement", async ({ page }) => {
   await createHero(page);
-  await expect(page.getByText("Novice")).toBeVisible();
+  await expect(page.getByText("Novice", { exact: true })).toBeVisible();
 
   await page.getByRole("checkbox", { name: /Valider : Boire 1,5 L d'eau/ }).click();
   await expect(page.getByRole("status").getByText("+10 XP 💪  ·  +5 🪙")).toBeVisible();
@@ -40,7 +40,7 @@ test("vaincre un boss donne le butin", async ({ page }) => {
   await page.getByRole("button", { name: "Invoquer le boss" }).click();
 
   for (let i = 0; i < 2; i++) {
-    await page.getByRole("button", { name: "⚔️ Étape faite" }).click();
+    await page.getByRole("button", { name: "Étape faite" }).click();
     const levelUp = page.getByRole("button", { name: "Continuer" });
     if (await levelUp.isVisible().catch(() => false)) await levelUp.click();
   }
@@ -52,7 +52,7 @@ test("vaincre un boss donne le butin", async ({ page }) => {
 test("importer une sauvegarde de la V1", async ({ page }) => {
   await createHero(page, "Temp");
   await page.getByRole("button", { name: "Profil" }).click();
-  await page.getByRole("button", { name: "⬆️ Importer" }).click();
+  await page.getByRole("button", { name: "Importer une partie" }).click();
   const v1 = {
     v: 1, hero: { name: "Ancien", seed: "Ancien", style: "pixel-art" }, xp: 260, gold: 77, hp: 40,
     stats: { force: 100, intel: 160, charisme: 0, discipline: 0, richesse: 0 },
@@ -69,7 +69,7 @@ test("importer une sauvegarde de la V1", async ({ page }) => {
 test("refuse un texte qui n'est pas une sauvegarde", async ({ page }) => {
   await createHero(page);
   await page.getByRole("button", { name: "Profil" }).click();
-  await page.getByRole("button", { name: "⬆️ Importer" }).click();
+  await page.getByRole("button", { name: "Importer une partie" }).click();
   await page.getByLabel("Texte de la sauvegarde").fill('{"hero": "pirate"}');
   await page.getByRole("button", { name: "Importer", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveText("Ce n'est pas une sauvegarde LifeQuest valide");

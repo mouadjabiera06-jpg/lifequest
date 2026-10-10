@@ -4,6 +4,7 @@ import { MAX_HP, STATS } from "../../domain/rules";
 import type { GameState } from "../../domain/types";
 import { Avatar } from "./Avatar";
 import { ProgressBar } from "./basics";
+import { Icon } from "./Icon";
 import { SyncBadge } from "./SyncBadge";
 
 export function HeroCard({ game }: { game: GameState }) {
@@ -37,14 +38,14 @@ export function HeroCard({ game }: { game: GameState }) {
         </div>
       </div>
       <div className="hero-foot">
-        <span className="chip gold" title="Pièces d'or">🪙 {game.gold}</span>
+        <span className="chip gold" title="Pièces d'or"><Icon name="coin" size={15} /> {game.gold}</span>
         {STATS.map((s) => (
-          <span key={s.id} className="chip" title={`${s.name} : niveau ${statLevel(game.statXp[s.id]).level}`}>
-            <span aria-hidden="true">{s.icon}</span> {statLevel(game.statXp[s.id]).level}
+          <span key={s.id} className="chip" title={`${s.name} : niveau ${statLevel(game.statXp[s.id]).level}`} style={{ "--sc": `var(--${s.id})` } as CSSProperties}>
+            <Icon name={s.id} size={14} className="sc" /> {statLevel(game.statXp[s.id]).level}
             <span className="sr-only"> en {s.name}</span>
           </span>
         ))}
-        {game.paused && <span className="chip">🏖️ Pause</span>}
+        {game.paused && <span className="chip"><Icon name="pause" size={14} /> Pause</span>}
       </div>
     </section>
   );

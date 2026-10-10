@@ -1,7 +1,7 @@
 {
   "name": "lifequest",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Ta vie comme un jeu vidéo : quêtes, XP, niveaux, boss et récompenses.",
   "type": "module",
   "engines": {
